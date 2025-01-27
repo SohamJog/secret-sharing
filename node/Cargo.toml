@@ -11,7 +11,6 @@ config = { package = "config", path="../config"}
 rbc = {package = "rbc",path="../consensus/rbc"}
 ecc_rbc = {package = "ecc_rbc",path="../consensus/ecc_rbc"}
 ctrbc = {package = "ctrbc",path="../consensus/ctrbc"}
-avid = {package= "avid", path="../consensus/avid"}
 consensus = { package = "consensus", path="../consensus"}
 util = { package = "util", path="../util"}
 anyhow = "1"
@@ -24,6 +23,6 @@ simple_logger="*"
 fnv = "1.0.3"
 signal-hook = "0"
 
-network = { package = "network", git = "https://github.com/libdist-rs/libnet-rs.git" }
+network = { package = "network", git = "https://github.com/akhilsb/libnet-rs.git" }
 async-trait = "0"
 futures-util = "0"

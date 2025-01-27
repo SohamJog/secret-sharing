@@ -81,11 +81,6 @@ async fn main() -> Result<()> {
                 ctrbc::Context::spawn(config, input_value.as_bytes().to_vec(), node_normal)
                     .unwrap();
         }
-        "avid" => {
-            exit_tx =
-                avid::Context::spawn(config, input_value.as_bytes().to_vec(), node_normal)
-                    .unwrap();
-        }
         "sync" => {
             let f_str = syncer_file.to_string();
             log::info!("Logging the file f {}", f_str);
