@@ -8,9 +8,12 @@ edition = "2021"
 [dependencies]
 bincode = "1"
 config = { package = "config", path="../config"}
+
 rbc = {package = "rbc",path="../consensus/rbc"}
 ecc_rbc = {package = "ecc_rbc",path="../consensus/ecc_rbc"}
 ctrbc = {package = "ctrbc",path="../consensus/ctrbc"}
+
+
 consensus = { package = "consensus", path="../consensus"}
 util = { package = "util", path="../util"}
 anyhow = "1"
