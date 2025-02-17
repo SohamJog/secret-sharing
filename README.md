@@ -1,8 +1,9 @@
 # secret-sharing
 
-Rust implementation of Shamir's secret sharing with Lambdaworks FFT polynomials and FFT-friendly fields. Using the [Stark 252 prime field](https://github.com/lambdaclass/lambdaworks/blob/main/math/src/field/fields/fft_friendly/stark_252_prime_field.rs) from Lambdaworks. 
+Rust implementation of Shamir's secret sharing with Lambdaworks polynomials and FFT-friendly fields. Using the [Stark 252 prime field](https://github.com/lambdaclass/lambdaworks/blob/main/math/src/field/fields/fft_friendly/stark_252_prime_field.rs) from Lambdaworks. 
 
 ## Directory Structure
+
 Currently, the project is still a WIP. I have 3 Reliable protocols in the `consensus` folder. The `consensus/src/shamir` folder contains the secret sharing protocol. The `scripts` folder contains scripts to test the protocols. The `testdata` folder contains the configurations for the tests.
 `
 ---
