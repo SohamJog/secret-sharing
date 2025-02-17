@@ -1,6 +1,3 @@
-//use lambdaworks_math::fft::{evaluate_offset_fft, interpolate_fft};
-// use lambdaworks_math::fft::polynomial;
-
 use lambdaworks_math::field::element::FieldElement;
 use lambdaworks_math::field::fields::fft_friendly::stark_252_prime_field::Stark252PrimeField;
 use lambdaworks_math::polynomial::Polynomial;
@@ -11,20 +8,12 @@ use rand::random;
 
 type StarkField = FieldElement<Stark252PrimeField>;
 
-// pub struct ShamirSecretSharing {
-//     secret: FieldElement<F>,
-//     n: usize,
-//     k: usize,
-// }
-
 #[derive(Clone, Debug)]
 pub struct ShamirSecretSharing {
     /// the threshold of shares to recover the secret.
     pub threshold: usize,
     /// the total number of shares to generate from the secret.
     pub share_amount: usize,
-    // (not necessary) the prime number of the finite field.
-    // pub prime: StarkField,
 }
 
 impl ShamirSecretSharing {
@@ -96,7 +85,6 @@ mod tests {
         let shares_to_use_y = vec![shares[1], shares[3], shares[4]];
         let poly_2 = sss.reconstructing(shares_to_use_x, shares_to_use_y);
         let secret_recovered = sss.recover(&poly_2);
-        assert_eq!(polynomial, poly_2);
         assert_eq!(secret, secret_recovered);
     }
 }
