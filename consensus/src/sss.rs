@@ -66,20 +66,6 @@ impl ShamirSecretSharing {
     4. Implement the product function for polynomials (see if you can find a pattern and then create a funciton)
     5. Unit test all above functions
      */
-    pub fn fill_evaluation_at_all_points(&self, polynomial_evals: &mut Vec<LargeField>) {
-        let mut all_values = Vec::new();
-
-        // assert polynomial evals length = t + 1
-        let mut x = Vec::new();
-        for i in 0..polynomial_evals.len() {
-             x.push(LargeField::from(i as u64));
-             
-        }
-        let coeffs = self.reconstructing(&x, &polynomial_evals);
-        all_values.push(polynomial_evals[0]);
-        all_values.extend(self.generating_shares(&coeffs));
-        *polynomial_evals = all_values;
-    }
 
     pub fn reconstructing(
         &self,
@@ -96,7 +82,10 @@ impl ShamirSecretSharing {
     pub fn evaluate_at(&self, polynomial: &Polynomial<LargeField>, x: LargeField) -> LargeField {
         polynomial.evaluate(&x)
     }
+}
 
+// Conversion functions
+impl ShamirSecretSharing {
     /// Temporary functions to convert a large field element to a BigInt. Get rid of this once the whole library is using Lambdaworks Math.
     pub fn lf_to_bigint(field_elem: &LargeField) -> BigInt {
         let bytes = field_elem.to_bytes_be();
@@ -106,6 +95,38 @@ impl ShamirSecretSharing {
     pub fn bigint_to_lf(bigint: &BigInt) -> LargeField {
         let bytes = bigint.to_signed_bytes_be();
         FieldElement::<Stark252PrimeField>::from_bytes_be(&bytes).unwrap()
+    }
+}
+
+// Functions that will be needed for HACSS (High threshold asyncronous complete secret sharing)
+
+impl ShamirSecretSharing {
+    pub fn fill_evaluation_at_all_points(&self, polynomial_evals: &mut Vec<LargeField>) {
+        let mut all_values = Vec::new();
+
+        // assert polynomial evals length = t + 1
+        let mut x = Vec::new();
+        for i in 0..polynomial_evals.len() {
+            x.push(LargeField::from(i as u64));
+        }
+        let coeffs = self.reconstructing(&x, &polynomial_evals);
+        all_values.push(polynomial_evals[0]);
+        all_values.extend(self.generating_shares(&coeffs));
+        *polynomial_evals = all_values;
+    }
+
+    pub fn add_polynomials(
+        poly1: &Polynomial<LargeField>,
+        poly2: &Polynomial<LargeField>,
+    ) -> Polynomial<LargeField> {
+        poly1 + poly2
+    }
+
+    pub fn multiply_polynomials(
+        poly1: &Polynomial<LargeField>,
+        poly2: &Polynomial<LargeField>,
+    ) -> Polynomial<LargeField> {
+        poly1 * poly2
     }
 }
 
@@ -141,7 +162,6 @@ mod tests {
         let secret_recovered = sss.recover(&poly_2);
         assert_eq!(secret, secret_recovered);
     }
-    
 
     #[test]
     fn test_fill_evaluation_at_all_points() {
@@ -153,7 +173,7 @@ mod tests {
             threshold: 3,
         };
 
-       // generate polynomial, generate shares, then create a new vector with the first t+1 shares and the secret, and then verify that its equal to the shares polynomial after fill evals at all points
+        // generate polynomial, generate shares, then create a new vector with the first t+1 shares and the secret, and then verify that its equal to the shares polynomial after fill evals at all points
         let polynomial = sss.sample_polynomial(secret);
         let shares = sss.generating_shares(&polynomial);
         let mut shares_to_use = Vec::new();
@@ -166,7 +186,6 @@ mod tests {
         shares_to_use.remove(0);
         // assert shares_to_use is equal to shares
         assert_eq!(shares_to_use, shares);
-
     }
 }
 
