@@ -1,12 +1,13 @@
 use lambdaworks_math::field::element::FieldElement;
 use lambdaworks_math::field::fields::fft_friendly::stark_252_prime_field::Stark252PrimeField;
 use lambdaworks_math::polynomial::Polynomial;
+use lambdaworks_math::traits::ByteConversion;
 use lambdaworks_math::unsigned_integer::element::UnsignedInteger;
-pub use num_bigint;
+use num_bigint_dig::BigInt;
 use rand;
 use rand::random;
 
-type StarkField = FieldElement<Stark252PrimeField>;
+pub type LargeField = FieldElement<Stark252PrimeField>;
 
 #[derive(Clone, Debug)]
 pub struct ShamirSecretSharing {
@@ -17,14 +18,21 @@ pub struct ShamirSecretSharing {
 }
 
 impl ShamirSecretSharing {
-    fn rand_field_element() -> StarkField {
+    pub fn new(threshold: usize, share_amount: usize) -> Self {
+        ShamirSecretSharing {
+            threshold,
+            share_amount,
+        }
+    }
+    pub fn rand_field_element() -> LargeField {
         let rand_big = UnsignedInteger { limbs: random() };
-        StarkField::new(rand_big)
+        LargeField::new(rand_big)
     }
 
-    pub fn sample_polynomial(&self, secret: StarkField) -> Polynomial<StarkField> {
+    /// Generates coefficients for a polynomial of degree `threshold - 1` such that the constant term is the secret.
+    pub fn sample_polynomial(&self, secret: LargeField) -> Polynomial<LargeField> {
         let threshold = self.threshold;
-        let mut coefficients: Vec<StarkField> = Vec::new();
+        let mut coefficients: Vec<LargeField> = Vec::new();
         // first element is the secret
         coefficients.push(secret);
         for _ in 0..threshold - 1 {
@@ -35,23 +43,69 @@ impl ShamirSecretSharing {
     }
 
     // Generating vector of starkfield elements rather than shares for now since we aren't generating random X values
-    pub fn generating_shares(&self, polynomial: Polynomial<StarkField>) -> Vec<StarkField> {
-        let mut shares: Vec<StarkField> = Vec::new();
+    pub fn generating_shares(&self, polynomial: &Polynomial<LargeField>) -> Vec<LargeField> {
+        let mut shares: Vec<LargeField> = Vec::new();
 
-        for i in 0..self.share_amount {
-            let x = StarkField::from(i as u64);
+        for i in 1..self.share_amount + 1 {
+            let x = LargeField::from(i as u64);
             let y = polynomial.evaluate(&x);
             shares.push(y);
         }
         shares
     }
 
-    pub fn reconstructing(&self, x: Vec<StarkField>, y: Vec<StarkField>) -> Polynomial<StarkField> {
+    pub fn split(&self, secret: LargeField) -> Vec<LargeField> {
+        let polynomial = self.sample_polynomial(secret);
+        self.generating_shares(&polynomial)
+    }
+
+    /*
+    1. Implement the verify_degree function
+    2. Implement the fill_evaluation_at_all_points function
+    3. Implement the sum function for polynomials
+    4. Implement the product function for polynomials (see if you can find a pattern and then create a funciton)
+    5. Unit test all above functions
+     */
+    pub fn fill_evaluation_at_all_points(&self, polynomial_evals: &mut Vec<LargeField>) {
+        let mut all_values = Vec::new();
+
+        // assert polynomial evals length = t + 1
+        let mut x = Vec::new();
+        for i in 0..polynomial_evals.len() {
+             x.push(LargeField::from(i as u64));
+             
+        }
+        let coeffs = self.reconstructing(&x, &polynomial_evals);
+        all_values.push(polynomial_evals[0]);
+        all_values.extend(self.generating_shares(&coeffs));
+        *polynomial_evals = all_values;
+    }
+
+    pub fn reconstructing(
+        &self,
+        x: &Vec<LargeField>,
+        y: &Vec<LargeField>,
+    ) -> Polynomial<LargeField> {
         Polynomial::interpolate(&x, &y).unwrap()
     }
 
-    pub fn recover(&self, polynomial: &Polynomial<StarkField>) -> StarkField {
+    pub fn recover(&self, polynomial: &Polynomial<LargeField>) -> LargeField {
         polynomial.coefficients()[0].clone()
+    }
+
+    pub fn evaluate_at(&self, polynomial: &Polynomial<LargeField>, x: LargeField) -> LargeField {
+        polynomial.evaluate(&x)
+    }
+
+    /// Temporary functions to convert a large field element to a BigInt. Get rid of this once the whole library is using Lambdaworks Math.
+    pub fn lf_to_bigint(field_elem: &LargeField) -> BigInt {
+        let bytes = field_elem.to_bytes_be();
+        BigInt::from_signed_bytes_be(&bytes)
+    }
+
+    pub fn bigint_to_lf(bigint: &BigInt) -> LargeField {
+        let bytes = bigint.to_signed_bytes_be();
+        FieldElement::<Stark252PrimeField>::from_bytes_be(&bytes).unwrap()
     }
 }
 
@@ -59,15 +113,15 @@ impl ShamirSecretSharing {
 #[allow(non_snake_case)]
 mod tests {
 
-    use crate::sss::Stark252PrimeField;
     use crate::ShamirSecretSharing;
     use lambdaworks_math::field::element::FieldElement;
+    use lambdaworks_math::field::fields::fft_friendly::stark_252_prime_field::Stark252PrimeField;
     use lambdaworks_math::unsigned_integer::element::UnsignedInteger;
 
     #[test]
     fn shamir_secret_sharing_works() {
-        type StarkField = FieldElement<Stark252PrimeField>; // Alias for StarkField
-        let secret = StarkField::new(UnsignedInteger::from(1234u64));
+        type LargeField = FieldElement<Stark252PrimeField>; // Alias for LargeField
+        let secret = LargeField::new(UnsignedInteger::from(1234u64));
 
         let sss = ShamirSecretSharing {
             share_amount: 6,
@@ -75,17 +129,44 @@ mod tests {
         };
 
         let polynomial = sss.sample_polynomial(secret);
-        let shares = sss.generating_shares(polynomial.clone());
+        let shares = sss.generating_shares(&polynomial);
 
         let shares_to_use_x = vec![
-            StarkField::new(UnsignedInteger::from(1u64)),
-            StarkField::new(UnsignedInteger::from(3u64)),
-            StarkField::new(UnsignedInteger::from(4u64)),
+            LargeField::new(UnsignedInteger::from(1u64)),
+            LargeField::new(UnsignedInteger::from(3u64)),
+            LargeField::new(UnsignedInteger::from(4u64)),
         ];
-        let shares_to_use_y = vec![shares[1], shares[3], shares[4]];
-        let poly_2 = sss.reconstructing(shares_to_use_x, shares_to_use_y);
+        let shares_to_use_y = vec![shares[0], shares[2], shares[3]];
+        let poly_2 = sss.reconstructing(&shares_to_use_x, &shares_to_use_y);
         let secret_recovered = sss.recover(&poly_2);
         assert_eq!(secret, secret_recovered);
+    }
+    
+
+    #[test]
+    fn test_fill_evaluation_at_all_points() {
+        type LargeField = FieldElement<Stark252PrimeField>; // Alias for LargeField
+        let secret = LargeField::new(UnsignedInteger::from(1234u64));
+
+        let sss = ShamirSecretSharing {
+            share_amount: 6,
+            threshold: 3,
+        };
+
+       // generate polynomial, generate shares, then create a new vector with the first t+1 shares and the secret, and then verify that its equal to the shares polynomial after fill evals at all points
+        let polynomial = sss.sample_polynomial(secret);
+        let shares = sss.generating_shares(&polynomial);
+        let mut shares_to_use = Vec::new();
+        shares_to_use.push(secret);
+        shares_to_use.extend(shares[0..sss.threshold + 1].to_vec());
+        sss.fill_evaluation_at_all_points(&mut shares_to_use);
+        // assert first element of shares_to_use is equal to secret
+        assert_eq!(shares_to_use[0], secret);
+        // remove shares_to_use[0]
+        shares_to_use.remove(0);
+        // assert shares_to_use is equal to shares
+        assert_eq!(shares_to_use, shares);
+
     }
 }
 
