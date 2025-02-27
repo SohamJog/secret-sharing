@@ -14,7 +14,9 @@ Rust implementation of Shamir's secret sharing with Lambdaworks polynomials and 
 ## Directory Structure
 
 
-Currently, the project is still a WIP. I have 3 Reliable Broadcast protocols in the `consensus` folder. The `consensus/src/shamir` folder contains the secret sharing protocol. The `scripts` folder contains scripts to test the protocols. The `testdata` folder contains the configurations for the tests.
+Currently, the project is still a WIP. I have 3 Reliable Broadcast protocols in the `consensus` folder. The `consensus/src/sss` folder contains the secret sharing protocol. The `consensus/src/sss_fft` file is where I am attempting to speed up the share creation step of secret sharing. 
+
+The `scripts` folder contains scripts to test the protocols. The `testdata` folder contains the configurations for the tests.
 
 ---
 ## Notes
