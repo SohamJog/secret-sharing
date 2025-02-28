@@ -1,13 +1,21 @@
+use lambdaworks_math::fft::cpu::roots_of_unity::get_powers_of_primitive_root;
 use lambdaworks_math::field::element::FieldElement;
 use lambdaworks_math::field::fields::fft_friendly::stark_252_prime_field::Stark252PrimeField;
+use lambdaworks_math::field::traits::RootsConfig;
 use lambdaworks_math::polynomial::Polynomial;
 use lambdaworks_math::traits::ByteConversion;
 use lambdaworks_math::unsigned_integer::element::UnsignedInteger;
 use num_bigint_dig::BigInt;
 use rand;
 use rand::random;
+type LargeField = FieldElement<Stark252PrimeField>;
+use lambdaworks_math::fft::polynomial;
 
-pub type LargeField = FieldElement<Stark252PrimeField>;
+/**
+ * Shamir's Secret Sharing Scheme using Fast Fourier Transform
+ * Send evaluation at P(w^i-1) to party i
+ * Secret stored at P(0)
+ */
 
 #[derive(Clone, Debug)]
 pub struct ShamirSecretSharingFFT {
@@ -15,6 +23,7 @@ pub struct ShamirSecretSharingFFT {
     pub threshold: usize,
     /// the total number of shares to generate from the secret.
     pub share_amount: usize,
+    pub roots_of_unity: Vec<LargeField>,
 }
 
 impl ShamirSecretSharingFFT {
@@ -22,11 +31,18 @@ impl ShamirSecretSharingFFT {
         ShamirSecretSharingFFT {
             threshold,
             share_amount,
+            roots_of_unity: Self::gen_roots_of_unity(share_amount),
         }
     }
     pub fn rand_field_element() -> LargeField {
         let rand_big = UnsignedInteger { limbs: random() };
         LargeField::new(rand_big)
+    }
+
+    fn gen_roots_of_unity(n: usize) -> Vec<LargeField> {
+        let len = n.next_power_of_two();
+        let order = len.trailing_zeros();
+        get_powers_of_primitive_root(order.into(), len, RootsConfig::Natural).unwrap()
     }
 
     /// Generates coefficients for a polynomial of degree `threshold - 1` such that the constant term is the secret.
@@ -44,14 +60,8 @@ impl ShamirSecretSharingFFT {
 
     // Generating vector of starkfield elements rather than shares for now since we aren't generating random X values
     pub fn generating_shares(&self, polynomial: &Polynomial<LargeField>) -> Vec<LargeField> {
-        let mut shares: Vec<LargeField> = Vec::new();
-
-        for i in 1..self.share_amount + 1 {
-            let x = LargeField::from(i as u64);
-            let y = polynomial.evaluate(&x);
-            shares.push(y);
-        }
-        shares
+        Polynomial::evaluate_fft::<Stark252PrimeField>(&polynomial, 1, Some(self.share_amount))
+            .unwrap()
     }
 
     pub fn split(&self, secret: LargeField) -> Vec<LargeField> {
@@ -59,20 +69,20 @@ impl ShamirSecretSharingFFT {
         self.generating_shares(&polynomial)
     }
 
-    /*
-    1. Implement the verify_degree function
-    2. Implement the fill_evaluation_at_all_points function
-    3. Implement the sum function for polynomials
-    4. Implement the product function for polynomials (see if you can find a pattern and then create a funciton)
-    5. Unit test all above functions
-     */
-
     pub fn reconstructing(
         &self,
-        x: &Vec<LargeField>,
+        x: &Vec<u64>, // Parties
         y: &Vec<LargeField>,
     ) -> Polynomial<LargeField> {
-        Polynomial::interpolate(&x, &y).unwrap()
+        let mapped_x: Vec<LargeField> = x.iter()
+        .map(|xi| if *xi == 0 {
+            LargeField::zero()
+        } else {
+            self.roots_of_unity[(*xi - 1) as usize].clone()  
+        })
+        .collect();
+
+        Polynomial::interpolate(&mapped_x, &y).unwrap()
     }
 
     pub fn recover(&self, polynomial: &Polynomial<LargeField>) -> LargeField {
@@ -101,13 +111,14 @@ impl ShamirSecretSharingFFT {
 // Functions that will be needed for HACSS (High threshold asyncronous complete secret sharing)
 
 impl ShamirSecretSharingFFT {
+    // TODO: FFT
     pub fn fill_evaluation_at_all_points(&self, polynomial_evals: &mut Vec<LargeField>) {
         let mut all_values = Vec::new();
 
         // assert polynomial evals length = t + 1
         let mut x = Vec::new();
         for i in 0..polynomial_evals.len() {
-            x.push(LargeField::from(i as u64));
+            x.push(i as u64);
         }
         let coeffs = self.reconstructing(&x, &polynomial_evals);
         all_values.push(polynomial_evals[0]);
@@ -147,16 +158,13 @@ mod tests {
         let sss = ShamirSecretSharingFFT {
             share_amount: 6,
             threshold: 3,
+            roots_of_unity: ShamirSecretSharingFFT::gen_roots_of_unity(6),
         };
 
         let polynomial = sss.sample_polynomial(secret);
         let shares = sss.generating_shares(&polynomial);
 
-        let shares_to_use_x = vec![
-            LargeField::new(UnsignedInteger::from(1u64)),
-            LargeField::new(UnsignedInteger::from(3u64)),
-            LargeField::new(UnsignedInteger::from(4u64)),
-        ];
+        let shares_to_use_x = vec![1u64, 3u64, 4u64];
         let shares_to_use_y = vec![shares[0], shares[2], shares[3]];
         let poly_2 = sss.reconstructing(&shares_to_use_x, &shares_to_use_y);
         let secret_recovered = sss.recover(&poly_2);
@@ -171,6 +179,7 @@ mod tests {
         let sss = ShamirSecretSharingFFT {
             share_amount: 6,
             threshold: 3,
+            roots_of_unity: ShamirSecretSharingFFT::gen_roots_of_unity(6),
         };
 
         // generate polynomial, generate shares, then create a new vector with the first t+1 shares and the secret, and then verify that its equal to the shares polynomial after fill evals at all points
@@ -188,57 +197,3 @@ mod tests {
         assert_eq!(shares_to_use, shares);
     }
 }
-
-// TODO: @sohamjog uncomment
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     #[test]
-//     fn test_wikipedia_example() {
-//         let sss = ShamirSecretSharing {
-//             threshold: 3,
-//             share_amount: 6,
-//             prime: BigInt::from(1613),
-//         };
-//         let shares = sss.evaluate_polynomial(vec![
-//             BigInt::from(1234),
-//             BigInt::from(166),
-//             BigInt::from(94),
-//         ]);
-//         assert_eq!(
-//             shares,
-//             [
-//                 (1, BigInt::from(1494)),
-//                 (2, BigInt::from(329)),
-//                 (3, BigInt::from(965)),
-//                 (4, BigInt::from(176)),
-//                 (5, BigInt::from(1188)),
-//                 (6, BigInt::from(775))
-//             ]
-//         );
-//         assert_eq!(
-//             sss.recover(&[
-//                 (1, BigInt::from(1494)),
-//                 (2, BigInt::from(329)),
-//                 (3, BigInt::from(965))
-//             ]),
-//             BigInt::from(1234)
-//         );
-//     }
-//     #[test]
-//     fn test_large_prime() {
-//         let sss = ShamirSecretSharing {
-//             threshold: 3,
-//             share_amount: 5,
-//             // prime: BigInt::from(6999213259363483493573619703 as i128),
-//             prime: BigInt::parse_bytes(
-//                 b"fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f",
-//                 16,
-//             )
-//             .unwrap(),
-//         };
-//         let secret = BigInt::parse_bytes(b"ffffffffffffffffffffffffffffffffffffff", 16).unwrap();
-//         let shares = sss.split(secret.clone());
-//         assert_eq!(secret, sss.recover(&shares[0..sss.threshold as usize]));
-//     }
-// }

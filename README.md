@@ -5,9 +5,9 @@ Rust implementation of Shamir's secret sharing with Lambdaworks polynomials and 
 # To-Do List  
 
 - [x] Create regular SSS scheme with tests  
-- [ ] Create SSS scheme with roots of unity  
-- [ ] Add FFT evaluation  
-- [ ] Unit testing  
+- [x] Create SSS scheme with roots of unity  
+- [x] Add FFT evaluation 
+- [ ] Add FFT interpolation (for fill_evaluation_at_all points)
 - [ ] Create benchmarks for both implementations and compare  
 - [ ] Add documentation
 
