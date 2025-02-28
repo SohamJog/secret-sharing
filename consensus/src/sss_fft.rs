@@ -111,7 +111,24 @@ impl ShamirSecretSharingFFT {
 // Functions that will be needed for HACSS (High threshold asyncronous complete secret sharing)
 
 impl ShamirSecretSharingFFT {
-    // TODO: FFT
+    // Note that we expect polynomial_evaluations at points 0, w^0, w^1, ... w^(t), and not 0... t like we did before
+    // We return the polynomial evaluations at points 0, w^0, w^1, ... w^(n) where n is the share amount
+    // Note that we can only use this function when t+1 = 2^m
+    pub fn fill_evaluation_at_all_points_fft(&self, polynomial_evals: &mut Vec<LargeField>) {
+        let mut all_values = Vec::new();
+        all_values.push(polynomial_evals[0]);
+        polynomial_evals.remove(0);
+        let coeffs = Polynomial::interpolate_fft::<Stark252PrimeField>(&polynomial_evals).unwrap();
+        let evals = Polynomial::evaluate_fft::<Stark252PrimeField>(&coeffs, 1, Some(self.share_amount)).unwrap();
+        all_values.extend(evals);
+
+        while all_values.len() > self.share_amount+1 {
+            all_values.pop();
+        }
+        *polynomial_evals = all_values; 
+    }
+
+
     pub fn fill_evaluation_at_all_points(&self, polynomial_evals: &mut Vec<LargeField>) {
         let mut all_values = Vec::new();
 
