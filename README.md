@@ -2,14 +2,6 @@
 
 Rust implementation of Shamir's secret sharing with Lambdaworks polynomials and FFT-friendly fields. Using the [Stark 252 prime field](https://github.com/lambdaclass/lambdaworks/blob/main/math/src/field/fields/fft_friendly/stark_252_prime_field.rs) from Lambdaworks. 
 
-# To-Do List  
-
-- [x] Create regular SSS scheme with tests  
-- [x] Create SSS scheme with roots of unity  
-- [x] Add FFT evaluation 
-- [x] Add FFT interpolation (for fill_evaluation_at_all_points)
-- [ ] Create benchmarks for both implementations and compare  
-- [ ] Add documentation
 
 ## Directory Structure
 
