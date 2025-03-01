@@ -39,7 +39,7 @@ impl ShamirSecretSharingFFT {
         LargeField::new(rand_big)
     }
 
-    fn gen_roots_of_unity(n: usize) -> Vec<LargeField> {
+    pub fn gen_roots_of_unity(n: usize) -> Vec<LargeField> {
         let len = n.next_power_of_two();
         let order = len.trailing_zeros();
         get_powers_of_primitive_root(order.into(), len, RootsConfig::Natural).unwrap()
@@ -194,9 +194,9 @@ mod tests {
         let secret = LargeField::new(UnsignedInteger::from(1234u64));
 
         let sss = ShamirSecretSharingFFT {
-            share_amount: 6,
-            threshold: 3,
-            roots_of_unity: ShamirSecretSharingFFT::gen_roots_of_unity(6),
+            share_amount: 32,
+            threshold: 16,
+            roots_of_unity: ShamirSecretSharingFFT::gen_roots_of_unity(32),
         };
 
         // generate polynomial, generate shares, then create a new vector with the first t+1 shares and the secret, and then verify that its equal to the shares polynomial after fill evals at all points
