@@ -27,17 +27,22 @@ The following are the results after running the benchmarks on my machine:
 
 ### Benchmark Results for Shamir's Secret Sharing (n = 32, threshold = 16)
 
+Comparing between SSS without Lambdaworks, SSS with lambdaworks without FFT, and SSS with Lambdaworks FFT.
+
 | Task                                   | Time (µs)           | % Outliers |
 |----------------------------------------|---------------------|------------|
-| **Secret Generation**                 | 11.496 - 12.480    | 7.00%      |
-| **Secret Generation using FFT**        | 4.7853 - 4.8140    | 24.00%     |
-| **Reconstructing Secret**              | 146.34 - 147.32    | 5.00%      |
+| **Share Generation**                  | 146.98 - 149.08    | 7.00%      |
+| **Share Generation using Lambdaworks**| 11.496 - 12.480    | 7.00%      |
+| **Share Generation using FFT**        | 4.7853 - 4.8140    | 24.00%     |
+| **Reconstructing Secret**              | 189.70 - 190.29    | 7.00%      |
+| **Reconstructing Secret using LW**     | 146.34 - 147.32    | 5.00%      |
 | **Reconstructing Secret using FFT**    | 144.74 - 145.88    | 4.00%      |
-| **Fill Evaluation at all points**      | 222.58 - 223.84    | 22.00%     |
+| **Fill Evaluation at all points**      | 268.38 - 270.27    | 7.00%      |
+| **Fill Evaluation at all points using LW**  | 222.58 - 223.84    | 22.00%     |
 | **Fill Evaluation at all points (FFT)**| 206.96 - 211.90    | 13.00%     |
 
 ### Observations:
-- **Generating shares with FFT is significantly faster** (~4.8µs vs. ~12.4µs).
+- **Generating shares with FFT is significantly faster** 
 - **Reconstruction using FFT does not provide a drastic improvement**, which is expected due to interpolation.
 - **FFT-based fill evaluation is slightly faster**.
 
