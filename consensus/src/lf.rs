@@ -90,7 +90,6 @@ impl LargeFieldSSS {
             }
             all_values.push(sum);
         }
-        all_values.remove(0);
         values.extend(all_values);
     }
 

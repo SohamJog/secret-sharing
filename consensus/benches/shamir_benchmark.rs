@@ -159,7 +159,7 @@ fn bench_fill_evaluation_at_all_points(c: &mut Criterion) {
             let shares = sss.generating_shares(&polynomial);
             let mut shares_to_use = Vec::new();
             shares_to_use.push(secret);
-            shares_to_use.extend(shares[0..sss.threshold + 1].to_vec());
+            shares_to_use.extend(shares[0..sss.threshold - 1].to_vec());
 
             sss.fill_evaluation_at_all_points(&mut shares_to_use);
             // remove shares_to_use[0]
@@ -188,7 +188,7 @@ fn bench_fill_evaluation_at_all_points_fft(c: &mut Criterion) {
             let shares = sss.generating_shares(&polynomial);
             let mut shares_to_use = Vec::new();
             shares_to_use.push(secret);
-            shares_to_use.extend(shares[0..sss.threshold + 1].to_vec());
+            shares_to_use.extend(shares[0..sss.threshold - 1].to_vec());
 
             sss.fill_evaluation_at_all_points(&mut shares_to_use);
             // assert first element of shares_to_use is equal to secret
@@ -221,7 +221,7 @@ fn bench_fill_evaluation_at_all_points_largefield(c: &mut Criterion) {
             
             let mut shares_to_use = Vec::new();
             shares_to_use.push(secret.clone());
-            shares_to_use.extend(shares[0..sss.threshold].to_vec());
+            shares_to_use.extend(shares[0..sss.threshold-1].to_vec());
 
             sss.fill_evaluation_at_all_points(&mut shares_to_use);
             // assert first element of shares_to_use is equal to secret
