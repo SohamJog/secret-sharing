@@ -11,7 +11,6 @@ config = { package = "config", path="../config"}
 
 rbc = {package = "rbc",path="../consensus/rbc"}
 ecc_rbc = {package = "ecc_rbc",path="../consensus/ecc_rbc"}
-ctrbc = {package = "ctrbc",path="../consensus/ctrbc"}
 
 
 consensus = { package = "consensus", path="../consensus"}

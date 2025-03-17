@@ -76,11 +76,6 @@ async fn main() -> Result<()> {
                 ecc_rbc::Context::spawn(config, input_value.as_bytes().to_vec(), node_normal)
                     .unwrap();
         }
-        "ctrbc" => {
-            exit_tx =
-                ctrbc::Context::spawn(config, input_value.as_bytes().to_vec(), node_normal)
-                    .unwrap();
-        }
         "sync" => {
             let f_str = syncer_file.to_string();
             log::info!("Logging the file f {}", f_str);

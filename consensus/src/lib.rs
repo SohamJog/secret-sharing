@@ -9,3 +9,6 @@ pub use sss_fft::*;
 
 mod lf;
 pub use lf::*;
+
+mod reed_solomon_fft;
+pub use reed_solomon_fft::*;

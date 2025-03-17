@@ -48,6 +48,13 @@ Comparing between SSS without Lambdaworks, SSS with lambdaworks without FFT, and
 
 ---
 
+## TODOS
+
+- [x] Implement Shamir's Secret Sharing with FFT
+- [x] Bench the implementation against regular FFT (with and without Lambdaworks polynomial)
+- [ ] Modify Reed Solomon Erasure Coding to use SSS library
+- [ ] Benchmark the modified Reed Solomon Erasure Coding against the original 
+
 ## Notes
 1. Kill these processes
 ```bash
